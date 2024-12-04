@@ -18,7 +18,7 @@ public class Day02 {
 
     public static void solve() throws IOException {
         solvePartOne();
-//        solvePartTwo();
+        solvePartTwo();
     }
 
     private static List<List<Long>> getListOfLevels() throws IOException {
@@ -61,13 +61,24 @@ public class Day02 {
         return true;
     }
 
-//    private static void solvePartTwo() throws IOException {
-//        long solution = 0;
-//        List<List<Long>> lists = getListOfLevels();
-//        for (int i = 0; i < lists.getFirst().size(); i++) {
-//            long leftElement = lists.getFirst().get(i);
-//            solution += leftElement * lists.getLast().stream().filter(x -> x == leftElement).count();
-//        }
-//        System.out.printf("The solution to part two is %s.%n", solution);
-//    }
+    private static void solvePartTwo() throws IOException {
+        long solution = 0;
+        List<List<Long>> listOfLevels = getListOfLevels();
+        for (int i = 0; i < listOfLevels.size(); i++) {
+            List<Long> currentLevels = listOfLevels.get(i);
+            if (isSafe(currentLevels) || isSafe(currentLevels.reversed())) {
+                solution++;
+                continue;
+            }
+            for (int j = 0; j < listOfLevels.get(i).size(); j++) {
+                List<Long> levelsWithRemoval = new ArrayList<>(currentLevels);
+                levelsWithRemoval.remove(j);
+                if (isSafe(levelsWithRemoval) || isSafe(levelsWithRemoval.reversed())) {
+                    solution++;
+                    break;
+                }
+            }
+        }
+        System.out.printf("The solution to part two is %s.%n", solution);
+    }
 }

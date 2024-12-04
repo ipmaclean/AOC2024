@@ -68,7 +68,7 @@ public class Day04 {
             String wordToSearch
     ) {
         if (position.y < 0 || position.y >= wordSearch.size() ||
-        position.x < 0 || position.x >= wordSearch.getFirst().length()) {
+                position.x < 0 || position.x >= wordSearch.getFirst().length()) {
             return false;
         }
         if (wordSearch.get(position.y).charAt(position.x) != wordToSearch.charAt(0)) {
@@ -81,14 +81,25 @@ public class Day04 {
                     direction,
                     wordToSearch.substring(1)
             );
-        }
-        else {
+        } else {
             return true;
         }
     }
 
     private static void solvePartTwo() throws IOException {
         long solution = 0;
+        List<String> wordSearch = getWordSearch();
+
+        for (int y = 0; y < wordSearch.size(); y++) {
+            for (int x = 0; x < wordSearch.getFirst().length(); x++) {
+                if ((searchInDirection(wordSearch, new Point(x, y), new Point(1, 1), "MAS") ||
+                        searchInDirection(wordSearch, new Point(x, y), new Point(1, 1), "SAM")) &&
+                        (searchInDirection(wordSearch, new Point(x + 2, y), new Point(-1, 1), "MAS") ||
+                                searchInDirection(wordSearch, new Point(x + 2, y), new Point(-1, 1), "SAM"))) {
+                    solution++;
+                }
+            }
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 }

@@ -44,8 +44,7 @@ public class Day03 {
             Matcher matcher = pattern.matcher(memory);
             while (matcher.find()) {
                 String match = matcher.group();
-                match = match.replace("mul(", "");
-                match = match.replace(")", "");
+                match = match.replace("mul(", "").replace(")", "");
                 long[] values = Arrays.stream(match.split(",")).mapToLong(Long::parseLong).toArray();
                 solution += values[0] * values[1];
             }
@@ -67,8 +66,7 @@ public class Day03 {
                 } else if (match.equals("don't()")) {
                     mulEnabled = false;
                 } else if (mulEnabled) {
-                    match = match.replace("mul(", "");
-                    match = match.replace(")", "");
+                    match = match.replace("mul(", "").replace(")", "");
                     long[] values = Arrays.stream(match.split(",")).mapToLong(Long::parseLong).toArray();
                     solution += values[0] * values[1];
                 }

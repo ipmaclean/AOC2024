@@ -54,6 +54,12 @@ public class Day05 {
 
     private void solvePartTwo() {
         long solution = 0;
+        for (int[] update : getUpdates()) {
+            int[] orderedUpdate = orderUpdate(update);
+            if (!Arrays.equals(orderedUpdate, update)) {
+                solution += orderedUpdate[orderedUpdate.length / 2];
+            }
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 

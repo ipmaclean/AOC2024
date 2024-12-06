@@ -8,6 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.AbstractMap;
 import java.util.HashSet;
 
 @Getter
@@ -58,7 +59,38 @@ public class Day06 {
     }
 
     private void solvePartTwo() {
+        // If you hit the same blocker from the same direction, you are in a loop.
         long solution = 0;
+        for (int y = 0; y <= getMaxY(); y++) {
+            for (int x = 0; x <= getMaxX(); x++) {
+                Point newBlocker = new Point(x, y);
+                if (blockers.contains(newBlocker)) {
+                    continue;
+                }
+                int directionIndex = 0;
+                Point currentPosition = new Point(startPosition.x, startPosition.y);
+                HashSet<AbstractMap.SimpleImmutableEntry<Point,Integer>> hitBlockersWithDirection = new HashSet<>();
+                while (currentPosition.x >= 0 && currentPosition.x <= getMaxX() &&
+                        currentPosition.y >= 0 && currentPosition.y <= getMaxY()) {
+                    Point nextPosition = new Point(
+                            currentPosition.x + DIRECTIONS[directionIndex].x,
+                            currentPosition.y + DIRECTIONS[directionIndex].y
+                    );
+                    if (blockers.contains(nextPosition) || newBlocker.equals(nextPosition)) {
+                        AbstractMap.SimpleImmutableEntry<Point, Integer> hitBlockerWithDirection = new AbstractMap.SimpleImmutableEntry<>(nextPosition, directionIndex);
+                        if (hitBlockersWithDirection.contains(hitBlockerWithDirection)) {
+                            solution++;
+                            break;
+                        }
+                        hitBlockersWithDirection.add(hitBlockerWithDirection);
+                        directionIndex = (directionIndex + 1) % 4;
+                    } else {
+                        currentPosition = nextPosition;
+                    }
+
+                }
+            }
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 

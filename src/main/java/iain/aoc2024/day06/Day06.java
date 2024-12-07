@@ -48,7 +48,7 @@ public class Day06 {
                     currentPosition.x + DIRECTIONS[directionIndex].x,
                     currentPosition.y + DIRECTIONS[directionIndex].y
             );
-            if (blockers.contains(nextPosition)) {
+            if (getBlockers().contains(nextPosition)) {
                 directionIndex = (directionIndex + 1) % 4;
             } else {
                 currentPosition = nextPosition;
@@ -64,19 +64,19 @@ public class Day06 {
         for (int y = 0; y <= getMaxY(); y++) {
             for (int x = 0; x <= getMaxX(); x++) {
                 Point newBlocker = new Point(x, y);
-                if (blockers.contains(newBlocker)) {
+                if (getBlockers().contains(newBlocker)) {
                     continue;
                 }
                 int directionIndex = 0;
                 Point currentPosition = new Point(startPosition.x, startPosition.y);
-                HashSet<AbstractMap.SimpleImmutableEntry<Point,Integer>> hitBlockersWithDirection = new HashSet<>();
+                HashSet<AbstractMap.SimpleImmutableEntry<Point, Integer>> hitBlockersWithDirection = new HashSet<>();
                 while (currentPosition.x >= 0 && currentPosition.x <= getMaxX() &&
                         currentPosition.y >= 0 && currentPosition.y <= getMaxY()) {
                     Point nextPosition = new Point(
                             currentPosition.x + DIRECTIONS[directionIndex].x,
                             currentPosition.y + DIRECTIONS[directionIndex].y
                     );
-                    if (blockers.contains(nextPosition) || newBlocker.equals(nextPosition)) {
+                    if (getBlockers().contains(nextPosition) || newBlocker.equals(nextPosition)) {
                         AbstractMap.SimpleImmutableEntry<Point, Integer> hitBlockerWithDirection = new AbstractMap.SimpleImmutableEntry<>(nextPosition, directionIndex);
                         if (hitBlockersWithDirection.contains(hitBlockerWithDirection)) {
                             solution++;
@@ -95,7 +95,7 @@ public class Day06 {
     }
 
     private void getInput() throws IOException {
-        InputStream inputStream = iain.aoc2024.day05.Day05.class.getClassLoader().getResourceAsStream(INPUT_FILE_NAME);
+        InputStream inputStream = iain.aoc2024.day06.Day06.class.getClassLoader().getResourceAsStream(INPUT_FILE_NAME);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
@@ -104,7 +104,7 @@ public class Day06 {
                 for (int x = 0; x < line.length(); x++) {
                     setMaxX(Math.max(getMaxX(), x));
                     if (line.charAt(x) == '#') {
-                        blockers.add(new Point(x, y));
+                        getBlockers().add(new Point(x, y));
                     } else if (line.charAt(x) == '^') {
                         setStartPosition(new Point(x, y));
                     }

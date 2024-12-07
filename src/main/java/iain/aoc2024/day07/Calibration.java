@@ -24,41 +24,46 @@ public class Calibration {
         expression = new ArrayDeque<>(expressionArray);
     }
 
-    public boolean canInsertOperators() {
-        Long currentTestValue = getTestValue();
+    public boolean canInsertOperators(boolean isPartTwo) {
         Deque<Long> localExpression = new ArrayDeque<>(expression);
-        int successCount = canInsertOperatorsLocal(currentTestValue, localExpression);
+        Long currentValue = localExpression.pollFirst();
+        int successCount;
+        successCount = canInsertOperatorsLocal(currentValue, localExpression, isPartTwo);
         return successCount > 0;
     }
 
     private int canInsertOperatorsLocal(
-            Long currentTestValue,
-            Deque<Long> localExpression
+            Long currentValue,
+            Deque<Long> localExpression,
+            boolean isPartTwo
     ) {
         if (localExpression.isEmpty()) {
-            throw new IllegalArgumentException("Cannot pass empty deque");
-        }
-        if (localExpression.size() == 1) {
-            return localExpression.pollLast().equals(currentTestValue) ?
+            return getTestValue().equals(currentValue) ?
                     1 :
                     0;
         }
-        Long lastValue = localExpression.pollLast();
-        if (currentTestValue < lastValue) {
+        if (currentValue > getTestValue()) {
             return 0;
         }
-        int multSuccessCount = 0;
-        if (currentTestValue % lastValue == 0) {
-            multSuccessCount = canInsertOperatorsLocal(
-                    currentTestValue / lastValue,
-                    new ArrayDeque<>(localExpression)
+        Long firstValue = localExpression.pollFirst();
+        int multSuccessCount = canInsertOperatorsLocal(
+                currentValue * firstValue,
+                new ArrayDeque<>(localExpression),
+                isPartTwo
+        );
+        int addSuccessCount = canInsertOperatorsLocal(
+                currentValue + firstValue,
+                new ArrayDeque<>(localExpression),
+                isPartTwo
+        );
+        int concatSuccessCount = 0;
+        if (isPartTwo) {
+            concatSuccessCount = canInsertOperatorsLocal(
+                    Long.parseLong(currentValue.toString() + firstValue),
+                    new ArrayDeque<>(localExpression),
+                    isPartTwo
             );
         }
-        int addSuccessCount = canInsertOperatorsLocal(
-                currentTestValue - lastValue,
-                new ArrayDeque<>(localExpression)
-        );
-
-        return multSuccessCount + addSuccessCount;
+        return multSuccessCount + addSuccessCount + concatSuccessCount;
     }
 }

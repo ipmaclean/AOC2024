@@ -29,7 +29,7 @@ public class Day07 {
     private void solvePartOne() {
         long solution = 0;
         for (Calibration calibration : getCalibrations()) {
-            if (calibration.canInsertOperators()) {
+            if (calibration.canInsertOperators(false)) {
                 solution += calibration.getTestValue();
             }
         }
@@ -38,6 +38,11 @@ public class Day07 {
 
     private void solvePartTwo() {
         long solution = 0;
+        for (Calibration calibration : getCalibrations()) {
+            if (calibration.canInsertOperators(true)) {
+                solution += calibration.getTestValue();
+            }
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 

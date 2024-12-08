@@ -25,45 +25,64 @@ public class Calibration {
     }
 
     public boolean canInsertOperators(boolean isPartTwo) {
+        Long currentTestValue = getTestValue();
         Deque<Long> localExpression = new ArrayDeque<>(expression);
-        Long currentValue = localExpression.pollFirst();
-        int successCount;
-        successCount = canInsertOperatorsLocal(currentValue, localExpression, isPartTwo);
+        int successCount = canInsertOperatorsLocal(currentTestValue, localExpression, isPartTwo);
         return successCount > 0;
     }
 
     private int canInsertOperatorsLocal(
-            Long currentValue,
+            Long currentTestValue,
             Deque<Long> localExpression,
             boolean isPartTwo
     ) {
         if (localExpression.isEmpty()) {
-            return getTestValue().equals(currentValue) ?
+            throw new IllegalArgumentException("Cannot pass empty deque");
+        }
+        if (localExpression.size() == 1) {
+            return localExpression.pollLast().equals(currentTestValue) ?
                     1 :
                     0;
         }
-        if (currentValue > getTestValue()) {
+        Long lastValue = localExpression.pollLast();
+        if (currentTestValue < lastValue) {
             return 0;
         }
-        Long firstValue = localExpression.pollFirst();
-        int multSuccessCount = canInsertOperatorsLocal(
-                currentValue * firstValue,
-                new ArrayDeque<>(localExpression),
-                isPartTwo
-        );
+        int multSuccessCount = 0;
+        if (currentTestValue % lastValue == 0) {
+            multSuccessCount = canInsertOperatorsLocal(
+                    currentTestValue / lastValue,
+                    new ArrayDeque<>(localExpression),
+                    isPartTwo
+            );
+        }
         int addSuccessCount = canInsertOperatorsLocal(
-                currentValue + firstValue,
+                currentTestValue - lastValue,
                 new ArrayDeque<>(localExpression),
                 isPartTwo
         );
         int concatSuccessCount = 0;
-        if (isPartTwo) {
+        if (isPartTwo && canDeconcatenate(currentTestValue, lastValue)) {
+
             concatSuccessCount = canInsertOperatorsLocal(
-                    Long.parseLong(currentValue.toString() + firstValue),
+                    Long.parseLong(currentTestValue.toString().substring(
+                            0,
+                            currentTestValue.toString().length() - lastValue.toString().length()
+                    )),
                     new ArrayDeque<>(localExpression),
                     isPartTwo
             );
         }
         return multSuccessCount + addSuccessCount + concatSuccessCount;
+    }
+
+    private boolean canDeconcatenate(
+            Long currentTestValue,
+            Long lastValue
+    ) {
+        if (currentTestValue.toString().length() <= lastValue.toString().length()) {
+            return  false;
+        }
+        return currentTestValue.toString().endsWith(lastValue.toString());
     }
 }

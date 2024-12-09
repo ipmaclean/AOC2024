@@ -80,9 +80,7 @@ public class Calibration {
             Long currentTestValue,
             Long lastValue
     ) {
-        if (currentTestValue.toString().length() <= lastValue.toString().length()) {
-            return  false;
-        }
-        return currentTestValue.toString().endsWith(lastValue.toString());
+        return currentTestValue.toString().length() > lastValue.toString().length() &&
+                currentTestValue.toString().endsWith(lastValue.toString());
     }
 }

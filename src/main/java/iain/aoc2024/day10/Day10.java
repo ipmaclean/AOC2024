@@ -46,16 +46,35 @@ public class Day10 {
                     solution += getTrailheadScore(x, y);
                 }
             }
-
         }
         System.out.printf("The solution to part one is %s.%n", solution);
     }
 
+    private void solvePartTwo() {
+        long solution = 0;
+        for (int y = 0; y <= getMaxY(); y++) {
+            for (int x = 0; x <= getMaxX(); x++) {
+                if (getTopologicalMap().get(y).charAt(x) == '0') {
+                    solution += getTrailheadRating(x, y);
+                }
+            }
+        }
+        System.out.printf("The solution to part two is %s.%n", solution);
+    }
+
     private long getTrailheadScore(int x, int y) {
+        return getTrailheadValue(x, y, true);
+    }
+
+    private long getTrailheadRating(int x, int y) {
+        return getTrailheadValue(x, y, false);
+    }
+
+    private long getTrailheadValue(int x, int y, boolean isTrailheadScore) {
         Queue<Point> pointsToVisit = new ArrayDeque<>();
         HashSet<Point> trackedPoints = new HashSet<>();
         pointsToVisit.add(new Point(x, y));
-        long trailheadScore = 0;
+        long trailheadValue = 0;
         while (!pointsToVisit.isEmpty()) {
             Point currentPoint = pointsToVisit.poll();
             int currentHeight = Character.getNumericValue(getTopologicalMap().get(currentPoint.y).charAt(currentPoint.x));
@@ -69,20 +88,17 @@ public class Day10 {
                 if (nextHeight != currentHeight + 1) {
                     continue;
                 }
-                trackedPoints.add(nextPoint);
+                if (isTrailheadScore) {
+                    trackedPoints.add(nextPoint);
+                }
                 if (nextHeight == 9) {
-                    trailheadScore++;
+                    trailheadValue++;
                     continue;
                 }
                 pointsToVisit.add(nextPoint);
             }
         }
-        return trailheadScore;
-    }
-
-    private void solvePartTwo() {
-        long solution = 0;
-        System.out.printf("The solution to part two is %s.%n", solution);
+        return trailheadValue;
     }
 
     private void getInput() throws IOException {

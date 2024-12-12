@@ -44,24 +44,29 @@ public class Day12 {
         LinkedHashSet<Point> allPointsLocal = new LinkedHashSet<>(getAllPoints());
         while (!allPointsLocal.isEmpty()) {
             Point gardenPlot = allPointsLocal.getFirst();
-            solution += getGardenFenceCost(gardenPlot, allPointsLocal);
+            solution += getGardenFenceCost(gardenPlot, allPointsLocal, true);
         }
         System.out.printf("The solution to part one is %s.%n", solution);
     }
 
     private void solvePartTwo() {
         long solution = 0;
+        LinkedHashSet<Point> allPointsLocal = new LinkedHashSet<>(getAllPoints());
+        while (!allPointsLocal.isEmpty()) {
+            Point gardenPlot = allPointsLocal.getFirst();
+            solution += getGardenFenceCost(gardenPlot, allPointsLocal, false);
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 
-    private long getGardenFenceCost(Point startingPoint, HashSet<Point> allPointsLocal) {
+    private long getGardenFenceCost(Point startingPoint, HashSet<Point> allPointsLocal, boolean isPartOne) {
         char plantId = getGardenMap().get(startingPoint.y).charAt(startingPoint.x);
         Queue<Point> pointsToVisit = new ArrayDeque<>();
         HashSet<Point> trackedPoints = new HashSet<>();
         pointsToVisit.add(startingPoint);
         trackedPoints.add(startingPoint);
-        long perimeter = 0;
-        // flood fill
+        LinkedHashSet<AbstractMap.SimpleImmutableEntry<Point, Point>> perimeterPointsWithDirection = new LinkedHashSet<>();
+        // flood fill - noting direction and position of perimeter points for part two
         while (!pointsToVisit.isEmpty()) {
             Point currentPoint = pointsToVisit.poll();
             allPointsLocal.remove(currentPoint);
@@ -69,7 +74,9 @@ public class Day12 {
                 Point nextPoint = new Point(currentPoint.x + direction.x, currentPoint.y + direction.y);
                 if (nextPoint.x < 0 || nextPoint.x > getMaxX() || nextPoint.y < 0 || nextPoint.y > getMaxY() ||
                         getGardenMap().get(nextPoint.y).charAt(nextPoint.x) != plantId) {
-                    perimeter++;
+                    AbstractMap.SimpleImmutableEntry<Point, Point> perimeterPointWithDirection =
+                            new AbstractMap.SimpleImmutableEntry<>(currentPoint, direction);
+                    perimeterPointsWithDirection.add(perimeterPointWithDirection);
                     continue;
                 }
                 if (trackedPoints.contains(nextPoint)) {
@@ -79,7 +86,34 @@ public class Day12 {
                 pointsToVisit.add(nextPoint);
             }
         }
-        return trackedPoints.size() * perimeter;
+        if (isPartOne) {
+            return trackedPoints.size() * (long) perimeterPointsWithDirection.size();
+        }
+        // the horrible mess below matches together perimeter points that face
+        // the same direction and are adjacent to each other - all together these
+        // form a side.
+        long sides = 0L;
+        while (!perimeterPointsWithDirection.isEmpty()) {
+            sides++;
+            LinkedHashSet<AbstractMap.SimpleImmutableEntry<Point, Point>> adjacentPerimeterPointsWithDirection = new LinkedHashSet<>();
+            adjacentPerimeterPointsWithDirection.add(perimeterPointsWithDirection.getFirst());
+            while (!adjacentPerimeterPointsWithDirection.isEmpty()) {
+                perimeterPointsWithDirection.removeAll(adjacentPerimeterPointsWithDirection);
+                LinkedHashSet<AbstractMap.SimpleImmutableEntry<Point, Point>> newAdjacentPerimeterPointsWithDirection = new LinkedHashSet<>();
+                for (AbstractMap.SimpleImmutableEntry<Point, Point> adjacentPerimeterPointWithDirection : adjacentPerimeterPointsWithDirection) {
+                    newAdjacentPerimeterPointsWithDirection.addAll(
+                            perimeterPointsWithDirection.stream()
+                                    .filter(ppwd -> ppwd.getValue() == adjacentPerimeterPointWithDirection.getValue() &&
+                                            Arrays.stream(DIRECTIONS).anyMatch(
+                                                    direction -> direction.x + adjacentPerimeterPointWithDirection.getKey().x == ppwd.getKey().x &&
+                                                            direction.y + adjacentPerimeterPointWithDirection.getKey().y == ppwd.getKey().y)
+                                    ).toList()
+                    );
+                }
+                adjacentPerimeterPointsWithDirection = newAdjacentPerimeterPointsWithDirection;
+            }
+        }
+        return trackedPoints.size() * sides;
     }
 
     private void getInput() throws IOException {

@@ -13,7 +13,7 @@ import java.util.List;
 public class Day13 {
 
     private static final String INPUT_FILE_NAME = "day13/input.txt";
-    private List<ClawMachine> clawMachines = new ArrayList<>();
+    private final List<ClawMachine> clawMachines = new ArrayList<>();
 
     public Day13() throws IOException {
         getInput();
@@ -27,13 +27,16 @@ public class Day13 {
     private void solvePartOne() {
         long solution = 0;
         for (ClawMachine clawMachine : clawMachines) {
-            solution += clawMachine.solve();
+            solution += clawMachine.solve(false);
         }
         System.out.printf("The solution to part one is %s.%n", solution);
     }
 
     private void solvePartTwo() {
         long solution = 0;
+        for (ClawMachine clawMachine : clawMachines) {
+            solution += clawMachine.solve(true);
+        }
         System.out.printf("The solution to part two is %s.%n", solution);
     }
 

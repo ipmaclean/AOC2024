@@ -47,10 +47,11 @@ public class Day14 {
 
     private void solvePartTwo() {
         int counter = -1;
-        int[] quadrants = new int[]{0, 0, 0, 0};
-        while (!(quadrants[0] - 250 > quadrants[1] &&
-                quadrants[0] - 250 > quadrants[2] &&
-                quadrants[0] - 250 > quadrants[3])) {
+        int[] quadrants;
+        // My first thought was that the tree would have symmetry down the centre - nope!
+        // With that a failure, check for when most points are bunched in any quadrant.
+        // Worked for my input but no guarantees for others.
+        do {
             quadrants = new int[]{0, 0, 0, 0};
             counter++;
             for (Robot robot : getRobots()) {
@@ -59,7 +60,10 @@ public class Day14 {
                     quadrants[quadrant]++;
                 }
             }
-        }
+        } while (quadrants[0] < getRobots().size() / 2 &&
+                quadrants[1] < getRobots().size() / 2 &&
+                quadrants[2] < getRobots().size() / 2 &&
+                quadrants[3] < getRobots().size() / 2);
         printPretty(counter);
         System.out.printf("The solution to part two is %s.%n", counter);
     }
@@ -83,7 +87,7 @@ public class Day14 {
             }
             sb.append(System.lineSeparator());
         }
-        System.out.println(sb.toString());
+        System.out.println(sb);
     }
 
     private void getInput() throws IOException {

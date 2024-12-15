@@ -10,4 +10,8 @@ public class Tile {
     private final boolean isWall;
     @Setter
     private boolean isBox;
+    @Setter
+    private boolean isBoxLeft;
+    @Setter
+    private boolean isBoxRight;
 }

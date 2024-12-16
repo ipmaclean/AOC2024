@@ -8,10 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -44,8 +42,78 @@ public class Day16 {
     }
 
     private void solvePartTwo() {
-        long solution = 0;
-        System.out.printf("The solution to part two is %s.%n", solution);
+        System.out.printf("The solution to part two is %s.%n", getCountOfGoodSeats(getLowestScore()));
+    }
+
+    private Object getCountOfGoodSeats(long lowestScore) {
+        HashSet<Coordinate2D> bestSeats = new HashSet<>();
+        bestSeats.add(getEndingPosition());
+
+        Queue<ReindeerStateWithScoreAndVisited> statesToVisit = new ArrayDeque<>();
+        HashSet<ReindeerState> startingVisited = new HashSet<>();
+        startingVisited.add(new ReindeerState(getStartingPosition(), 0));
+
+        HashMap<ReindeerState, Long> visitedStatesToScore = new HashMap<>();
+        visitedStatesToScore.put(new ReindeerState(getStartingPosition(), 0), 0L);
+
+        statesToVisit.add(new ReindeerStateWithScoreAndVisited(getStartingPosition(), 0, 0L, startingVisited));
+        // BFS, with each state tracking its previously visited states.
+        // Discard any paths where:
+        // you have already seen the same position and direction within the current state's history OR
+        // lowestScore is exceeded OR
+        // the current score for the position exceeds the minimum seen score for that position in any state
+        while (!statesToVisit.isEmpty()) {
+            ReindeerStateWithScoreAndVisited currentState = statesToVisit.poll();
+            Coordinate2D forwardPosition = new Coordinate2D(
+                    currentState.position().getX() + DIRECTIONS[currentState.directionIndex()].getX(),
+                    currentState.position().getY() + DIRECTIONS[currentState.directionIndex()].getY()
+            );
+            if (forwardPosition.equals(getEndingPosition())) {
+                bestSeats.addAll(currentState.visited().stream().map(ReindeerState::position).collect(Collectors.toSet()));
+                continue;
+            }
+
+            char forwardTile = getMaze().get((int) forwardPosition.getY()).charAt((int) forwardPosition.getX());
+            ReindeerState forwardState = new ReindeerState(
+                    forwardPosition,
+                    currentState.directionIndex()
+            );
+            if (forwardTile != '#' &&
+                    !currentState.visited().contains(forwardState) &&
+                    visitedStatesToScore.getOrDefault(forwardState, Long.MAX_VALUE) >= currentState.score() + 1 &&
+                    currentState.score() + 1 < lowestScore) {
+                HashSet<ReindeerState> newVisited = new HashSet<>(currentState.visited());
+                newVisited.add(forwardState);
+                statesToVisit.add(new ReindeerStateWithScoreAndVisited(
+                        forwardPosition,
+                        currentState.directionIndex(),
+                        currentState.score() + 1,
+                        newVisited
+                ));
+                visitedStatesToScore.put(forwardState, currentState.score() + 1);
+            }
+
+            for (int i = 1; i < DIRECTIONS.length; i += DIRECTIONS.length / 2) {
+                ReindeerState turnState = new ReindeerState(
+                        currentState.position(),
+                        (currentState.directionIndex() + i) % DIRECTIONS.length
+                );
+                if (!currentState.visited().contains(turnState) &&
+                        visitedStatesToScore.getOrDefault(turnState, Long.MAX_VALUE) >= currentState.score() + 1000 &&
+                        currentState.score() + 1000 < lowestScore) {
+                    HashSet<ReindeerState> newVisited = new HashSet<>(currentState.visited());
+                    newVisited.add(turnState);
+                    statesToVisit.add(new ReindeerStateWithScoreAndVisited(
+                            currentState.position(),
+                            (currentState.directionIndex() + i) % DIRECTIONS.length,
+                            currentState.score() + 1000,
+                            newVisited)
+                    );
+                    visitedStatesToScore.put(turnState, currentState.score() + 1000);
+                }
+            }
+        }
+        return bestSeats.size();
     }
 
     private long getLowestScore() {
@@ -66,6 +134,7 @@ public class Day16 {
             if (forwardPosition.equals(getEndingPosition())) {
                 return currentState.score() + 1;
             }
+
             char forwardTile = getMaze().get((int) forwardPosition.getY()).charAt((int) forwardPosition.getX());
             ReindeerState forwardState = new ReindeerState(
                     forwardPosition,
@@ -79,6 +148,7 @@ public class Day16 {
                 ));
                 visitedStates.add(forwardState);
             }
+
             for (int i = 1; i < DIRECTIONS.length; i += DIRECTIONS.length / 2) {
                 ReindeerState turnState = new ReindeerState(
                         currentState.position(),
@@ -94,7 +164,7 @@ public class Day16 {
                 }
             }
         }
-        return -1;
+        throw new IllegalStateException("Could not find lowest score.");
     }
 
     private void getInput() throws IOException {

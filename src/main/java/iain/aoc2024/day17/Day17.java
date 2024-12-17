@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,9 +12,9 @@ public class Day17 {
 
     private static final String INPUT_FILE_NAME = "day17/input.txt";
 
-    private final HashMap<Character, Integer> startRegisters = new HashMap<>();
-    private HashMap<Character, Integer> registers = new HashMap<>();
-    private final List<Integer> program = new ArrayList<>();
+    private final HashMap<Character, Long> inputRegisters = new HashMap<>();
+    private HashMap<Character, Long> registers = new HashMap<>();
+    private final List<Long> program = new ArrayList<>();
 
     public Day17() throws IOException {
         getInput();
@@ -28,31 +26,71 @@ public class Day17 {
     }
 
     private void solvePartOne() {
+        System.out.printf("The solution to part one is %s.%n", runProgram(inputRegisters));
+        System.out.printf("The input specific solution to part one is %s.%n", runRealInputProgramStreamlined(inputRegisters.get('A')));
+    }
+
+    private void solvePartTwo() {
+        ArrayDeque<Long> desired = new ArrayDeque<>();
+        for (long entry : program) {
+            desired.add(entry);
+        }
+        System.out.printf("The solution to part two is %s.%n", findRegisterA(1, 8, desired));
+    }
+
+    private long findRegisterA(long registerA, long endRegisterCheck, Deque<Long> desiredProgram) {
+        long currentDesired = desiredProgram.removeLast();
+        while (registerA < endRegisterCheck) {
+            long value = (registerA % 8) ^ (registerA / (long) Math.pow(2, (double) 7 - (registerA % 8))) % 8;
+            if (value == currentDesired) {
+                if (desiredProgram.isEmpty()) {
+                    return registerA;
+                }
+                long nextA = findRegisterA(registerA * 8, registerA * 8 + 8, new ArrayDeque<>(desiredProgram));
+                if (nextA != -1) {
+                    return nextA;
+                }
+            }
+            registerA++;
+        }
+        return -1;
+    }
+
+    private static String runRealInputProgramStreamlined(long aRegister) {
+        List<String> output = new ArrayList<>();
+        while (aRegister > 0) {
+            output.add(String.valueOf((aRegister % 8) ^ (aRegister / (long) Math.pow(2, 7 - (aRegister % 8))) % 8));
+            aRegister = aRegister / 8;
+        }
+        return String.join(",", output);
+    }
+
+    private String runProgram(HashMap<Character, Long> startRegisters) {
         List<String> output = new ArrayList<>();
         int instructionPointer = 0;
         registers = new HashMap<>(startRegisters);
         while (instructionPointer < program.size()) {
-            int opcode = program.get(instructionPointer);
-            int operand = program.get(instructionPointer + 1);
-            switch (opcode) {
+            long opcode = program.get(instructionPointer);
+            long operand = program.get(instructionPointer + 1);
+            switch ((int) opcode) {
                 case 0:
                     aDivide(operand, 'A');
                     instructionPointer += 2;
                     break;
                 case 1:
-                    bitwiseXOR(operand, 'B', null);
+                    bitwiseXOR(operand, null);
                     instructionPointer += 2;
                     break;
                 case 2:
-                    mod8(operand, 'B');
+                    mod8(operand);
                     instructionPointer += 2;
                     break;
                 case 3:
-                    int aRegister = registers.get('A');
-                    instructionPointer = aRegister != 0 ? operand : instructionPointer + 2;
+                    long aRegister = registers.get('A');
+                    instructionPointer = aRegister != 0 ? (int) operand : instructionPointer + 2;
                     break;
                 case 4:
-                    bitwiseXOR(operand, 'B', 'C');
+                    bitwiseXOR(operand, 'C');
                     instructionPointer += 2;
                     break;
                 case 5:
@@ -71,47 +109,36 @@ public class Day17 {
                     throw new IllegalArgumentException("Opcode not recognised");
             }
         }
-        System.out.printf("The solution to part one is %s.%n", String.join(",", output));
+        return String.join(",", output);
     }
 
-    private void mod8(int operand, char registerKey) {
-        registers.put(registerKey, getComboOperand(operand) % 8);
+    private void mod8(long operand) {
+        registers.put('B', getComboOperand(operand) % 8);
     }
 
-    private String out(int operand) {
+    private String out(long operand) {
         return String.valueOf(getComboOperand(operand) % 8);
     }
 
-    private void aDivide(int operand, char registerKey) {
-        int quotient = registers.get('A') / (int) Math.pow(2, getComboOperand(operand));
+    private void aDivide(long operand, char registerKey) {
+        long quotient = registers.get('A') / (int) Math.pow(2, getComboOperand(operand));
         registers.put(registerKey, quotient);
     }
 
-    private void bitwiseXOR(int operand, char registerKey, Character optionalRegisterKey) {
-        int variable = optionalRegisterKey != null ? registers.get(optionalRegisterKey) : operand;
-        int value = registers.get(registerKey) ^ variable;
-        registers.put(registerKey, value);
+    private void bitwiseXOR(long operand, Character optionalRegisterKey) {
+        long variable = optionalRegisterKey != null ? registers.get(optionalRegisterKey) : operand;
+        long value = registers.get('B') ^ variable;
+        registers.put('B', value);
     }
 
-    private int getComboOperand(int operand) {
-        switch (operand) {
-            case 0, 1, 2, 3:
-                return operand;
-            case 4:
-                return registers.get('A');
-            case 5:
-                return registers.get('B');
-            case 6:
-                return registers.get('C');
-            case 7:
-            default:
-                throw new IllegalArgumentException("Operand not recognised");
-        }
-    }
-
-    private void solvePartTwo() {
-        long solution = 0;
-        System.out.printf("The solution to part two is %s.%n", solution);
+    private long getComboOperand(long operand) {
+        return switch ((int) operand) {
+            case 0, 1, 2, 3 -> operand;
+            case 4 -> registers.get('A');
+            case 5 -> registers.get('B');
+            case 6 -> registers.get('C');
+            default -> throw new IllegalArgumentException("Operand not recognised");
+        };
     }
 
     private void getInput() throws IOException {
@@ -125,14 +152,14 @@ public class Day17 {
                 line = reader.readLine();
                 Matcher matcher = pattern.matcher(line);
                 matcher.find();
-                startRegisters.put(registerChar, Integer.parseInt(matcher.group()));
+                inputRegisters.put(registerChar, Long.parseLong(matcher.group()));
             }
 
-            line = reader.readLine();
+            reader.readLine();
             line = reader.readLine();
             Matcher matcher = pattern.matcher(line);
             while (matcher.find()) {
-                program.add(Integer.parseInt(matcher.group()));
+                program.add(Long.parseLong(matcher.group()));
             }
         }
     }

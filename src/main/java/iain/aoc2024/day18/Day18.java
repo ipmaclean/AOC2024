@@ -6,9 +6,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Day18 {
 
@@ -24,6 +22,7 @@ public class Day18 {
 
     private final HashMap<Coordinate2D, MemorySpace> coordinateToMemorySpaceMap = new HashMap<>();
     private final TreeSet<MemorySpace> unvisitedMemorySpaces = new TreeSet<>(new MemorySpaceComparator());
+    private final List<String> fallingBytes = new ArrayList<>();
 
     public void solve() throws IOException {
         solvePartOne();
@@ -31,25 +30,30 @@ public class Day18 {
     }
 
     private void solvePartOne() throws IOException {
-        getInput();
-        coordinateToMemorySpaceMap.get(new Coordinate2D(0, 0)).setShortestPath(0);
         System.out.printf("The solution to part one is %s.%n", getShortestPath(1024L));
     }
 
     private void solvePartTwo() throws IOException {
+        long shortestPath = 0;
+        int counter = 0;
+        while (shortestPath != -1) {
+            shortestPath = getShortestPath(++counter);
+        }
+        // counter - 1 due to offsets from wallTimerCutoff starting from 1
+        System.out.printf("The solution to part two is %s.%n", fallingBytes.get(counter - 1));
+    }
+
+    private long getShortestPath(long wallTimerCutoff) throws IOException {
         getInput();
         MemorySpace startingMemorySpace = coordinateToMemorySpaceMap.get(new Coordinate2D(0, 0));
         unvisitedMemorySpaces.remove(startingMemorySpace);
         startingMemorySpace.setShortestPath(0);
         unvisitedMemorySpaces.add(startingMemorySpace);
-        System.out.printf("The solution to part two is %s.%n", 0);
-    }
-
-    private long getShortestPath(long wallTimerCutoff) {
         while (!unvisitedMemorySpaces.isEmpty()) {
             MemorySpace currentSpace = unvisitedMemorySpaces.pollFirst();
             if (currentSpace == null || currentSpace.getShortestPath() == Long.MAX_VALUE) {
-                throw new IllegalStateException("Could not find shortest path.");
+                // no path to end
+                return -1;
             }
             coordinateToMemorySpaceMap.remove(currentSpace.getCoordinates());
             if (currentSpace.getCoordinates().equals(MAX_COORDINATES)) {
@@ -74,11 +78,14 @@ public class Day18 {
                 }
             }
         }
-        throw new IllegalStateException("Could not find shortest path.");
+        // no path to end
+        return -1;
     }
 
     private void getInput() throws IOException {
         coordinateToMemorySpaceMap.clear();
+        unvisitedMemorySpaces.clear();
+        fallingBytes.clear();
         for (long y = 0; y <= MAX_COORDINATES.getY(); y++) {
             for (long x = 0; x <= MAX_COORDINATES.getX(); x++) {
                 Coordinate2D coordinates = new Coordinate2D(x, y);
@@ -93,6 +100,7 @@ public class Day18 {
             String line;
             long counter = 1L;
             while ((line = reader.readLine()) != null) {
+                fallingBytes.add(line);
                 long[] coordinates = Arrays.stream(line.split(",")).mapToLong(Long::parseLong).toArray();
                 coordinateToMemorySpaceMap.get(new Coordinate2D(coordinates[0], coordinates[1])).setWallTimer(counter++);
             }

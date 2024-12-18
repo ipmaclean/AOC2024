@@ -34,13 +34,19 @@ public class Day18 {
     }
 
     private void solvePartTwo() throws IOException {
-        long shortestPath = 0;
-        int counter = 0;
-        while (shortestPath != -1) {
-            shortestPath = getShortestPath(++counter);
+        // binary search
+        int low = 1025;
+        int high = fallingBytes.size();
+        while (high - low > 1) {
+            int index = (low + high) / 2;
+            if (getShortestPath(index) != -1) {
+                low = index;
+            }
+            else {
+                high = index;
+            }
         }
-        // counter - 1 due to offsets from wallTimerCutoff starting from 1
-        System.out.printf("The solution to part two is %s.%n", fallingBytes.get(counter - 1));
+        System.out.printf("The solution to part two is %s.%n", fallingBytes.get(high - 1));
     }
 
     private long getShortestPath(long wallTimerCutoff) throws IOException {

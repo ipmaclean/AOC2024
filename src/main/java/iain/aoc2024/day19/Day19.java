@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 
 public class Day19 {
@@ -14,8 +14,7 @@ public class Day19 {
 
     private String[] patterns = new String[0];
     private final List<String> designs = new ArrayList<>();
-    private final HashSet<String> possibleDesigns = new HashSet<>();
-    private final HashSet<String> impossibleDesigns = new HashSet<>();
+    private final HashMap<String, Long> designsToWaysToMake = new HashMap<>();
 
     public Day19() throws IOException {
         getInput();
@@ -27,11 +26,9 @@ public class Day19 {
     }
 
     private void solvePartOne() {
-        possibleDesigns.clear();
-        impossibleDesigns.clear();
-        int solution = 0;
+        long solution = 0;
         for (String design : designs) {
-            if (canMakeDesign(design)) {
+            if (waysToMakeDesign(design) > 0) {
                 solution++;
             }
         }
@@ -39,30 +36,29 @@ public class Day19 {
     }
 
     private void solvePartTwo() {
-        System.out.printf("The solution to part two is %s.%n", 0);
+        long solution = 0;
+        for (String design : designs) {
+            solution += waysToMakeDesign(design);
+        }
+        System.out.printf("The solution to part two is %s.%n", solution);
     }
 
-    private boolean canMakeDesign(String design) {
-        if (design.isEmpty() || possibleDesigns.contains(design)) {
-            return true;
+    private long waysToMakeDesign(String design) {
+        if (design.isEmpty()) {
+            return 1;
         }
-        if (impossibleDesigns.contains(design)) {
-            return false;
+        if (designsToWaysToMake.containsKey(design)) {
+            return designsToWaysToMake.get(design);
         }
-        boolean canMakeDesign = false;
+
+        long waysToMake = 0;
         for (String pattern : patterns) {
             if (design.startsWith(pattern)) {
-                canMakeDesign = canMakeDesign(design.substring(pattern.length())) || canMakeDesign;
-            }
-            if (canMakeDesign) {
-                possibleDesigns.add(design);
-                break;
+                waysToMake += waysToMakeDesign(design.substring(pattern.length()));
             }
         }
-        if (!canMakeDesign) {
-            impossibleDesigns.add(design);
-        }
-        return canMakeDesign;
+        designsToWaysToMake.put(design, waysToMake);
+        return waysToMake;
     }
 
     private void getInput() throws IOException {

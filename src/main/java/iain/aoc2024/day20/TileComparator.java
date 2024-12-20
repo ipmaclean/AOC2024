@@ -26,13 +26,6 @@ public class TileComparator implements Comparator<Tile> {
             return 1;
         }
 
-        if (!left.isWall() && right.isWall()) {
-            return -1;
-        }
-        if (left.isWall() && !right.isWall()) {
-            return 1;
-        }
-
         return 0;
     }
 }

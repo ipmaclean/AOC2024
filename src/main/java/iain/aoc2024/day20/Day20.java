@@ -23,68 +23,77 @@ public class Day20 {
             };
 
     private final List<String> map = new ArrayList<>();
-    private Coordinate2D startingCoordinate = new Coordinate2D(-1, -1);
-    private Coordinate2D endingCoordinate = new Coordinate2D(-1, -1);
+    private Coordinate2D startingCoordinate;
+    private Coordinate2D endingCoordinate;
     private final HashMap<Coordinate2D, Tile> coordinateToTileMap = new HashMap<>();
     private final TreeSet<Tile> unvisitedTiles = new TreeSet<>(new TileComparator());
+    private HashMap<Coordinate2D, Long> shortestPathsFromStart = new HashMap<>();
+    private HashMap<Coordinate2D, Long> shortestPathsFromEnd = new HashMap<>();
 
     public Day20() throws IOException {
         getMap();
+        setStartAndEndCoords();
     }
 
     public void solve() {
+        shortestPathsFromStart = getShortestPath(startingCoordinate, endingCoordinate);
+        shortestPathsFromEnd = getShortestPath(endingCoordinate, startingCoordinate);
         solvePartOne();
         solvePartTwo();
     }
 
     private void solvePartOne() {
-        long shortestPathNoCheat = getShortestPath(null, 0);
-        List<Long> shortestPathsWithCheats = new ArrayList<>();
-        for (int y = 0; y < map.size() - 1; y++) {
-            for (int x = 0; x < map.getFirst().length() - 1; x++) {
-                for (int direction = 0; direction < 4; direction++) {
-                    long shortestPathWithCheat = getShortestPath(new Coordinate2D(x, y), direction);
-                    if (shortestPathWithCheat != -1) {
-                        shortestPathsWithCheats.add(shortestPathWithCheat);
-                    }
+        System.out.printf("The solution to part one is %s.%n", getSolution(2));
+    }
+
+    private void solvePartTwo() {
+        System.out.printf("The solution to part two is %s.%n", getSolution(20));
+    }
+
+    private long getSolution(long maxCheatDistance) {
+        long solution = 0;
+        for (Coordinate2D startingCoord : shortestPathsFromStart.keySet()) {
+            solution += getCheatCounts(startingCoord, maxCheatDistance);
+        }
+        return solution;
+    }
+
+    private long getCheatCounts(
+            Coordinate2D startingCheatCoord,
+            long maxCheatDistance) {
+        long minimumCheatSaveToCount = 100;
+        long totalCheatSavings = 0;
+        long shortestNonCheatPath = shortestPathsFromStart.get(endingCoordinate);
+        for (long y = startingCheatCoord.getY() - maxCheatDistance; y <= startingCheatCoord.getY() + maxCheatDistance; y++) {
+            for (long x = startingCheatCoord.getX() - maxCheatDistance; x <= startingCheatCoord.getX() + maxCheatDistance; x++) {
+                long xDiff = Math.abs(startingCheatCoord.getX() - x);
+                long yDiff = Math.abs(startingCheatCoord.getY() - y);
+                if (xDiff + yDiff < 2 ||
+                        xDiff + yDiff > maxCheatDistance ||
+                        !shortestPathsFromEnd.containsKey(new Coordinate2D(x, y))
+                ) {
+                    continue;
+                }
+                long shortestPathWithCheat = shortestPathsFromStart.get(startingCheatCoord) +
+                        xDiff + yDiff +
+                        shortestPathsFromEnd.get(new Coordinate2D(x, y));
+                if (shortestPathWithCheat < shortestNonCheatPath) {
+                    long savingsWithCheat = shortestNonCheatPath - shortestPathWithCheat;
+                    totalCheatSavings = savingsWithCheat >= minimumCheatSaveToCount ?
+                            totalCheatSavings + 1 :
+                            totalCheatSavings;
                 }
             }
         }
-        long cheatsThatSaveAtLeast100 = shortestPathsWithCheats.stream()
-                .filter(x -> x < shortestPathNoCheat)
-                .map(x -> shortestPathNoCheat - x)
-                .filter(x -> x >= 100)
-                .count();
-        System.out.printf("The solution to part one is %s.%n", cheatsThatSaveAtLeast100);
+        return totalCheatSavings;
     }
 
 
-    private void solvePartTwo() {
-        System.out.printf("The solution to part two is %s.%n", 0);
-    }
-
-    private long getShortestPath(Coordinate2D cheatStart, int cheatDirectionIndex) {
-        Coordinate2D cheatMiddle;
-        if (cheatStart != null) {
-            cheatMiddle = new Coordinate2D(
-                    cheatStart.getX() + DIRECTIONS[cheatDirectionIndex].getX(),
-                    cheatStart.getY() + DIRECTIONS[cheatDirectionIndex].getY()
-            );
-            Coordinate2D cheatEnd = new Coordinate2D(
-                    cheatStart.getX() + 2 * DIRECTIONS[cheatDirectionIndex].getX(),
-                    cheatStart.getY() + 2 * DIRECTIONS[cheatDirectionIndex].getY()
-            );
-            if (cheatEnd.getY() < 0 || cheatEnd.getY() >= map.size() ||
-                    cheatEnd.getX() < 0 || cheatEnd.getX() >= map.getFirst().length() ||
-                    map.get((int) cheatStart.getY()).charAt((int) cheatStart.getX()) == '#' ||
-                    map.get((int) cheatEnd.getY()).charAt((int) cheatEnd.getX()) == '#' ||
-                    map.get((int) cheatMiddle.getY()).charAt((int) cheatMiddle.getX()) == '.'
-            ) {
-                return -1;
-            }
-        }
+    private HashMap<Coordinate2D, Long> getShortestPath(Coordinate2D startingCoord, Coordinate2D endingCoord) {
         getInput();
-        Tile startingTile = coordinateToTileMap.get(startingCoordinate);
+        HashMap<Coordinate2D, Long> coordsToShortestPaths = new HashMap<>();
+
+        Tile startingTile = coordinateToTileMap.get(startingCoord);
         unvisitedTiles.remove(startingTile);
         startingTile.setShortestPath(0);
         unvisitedTiles.add(startingTile);
@@ -92,11 +101,12 @@ public class Day20 {
             Tile currentSpace = unvisitedTiles.pollFirst();
             if (currentSpace == null || currentSpace.getShortestPath() == Long.MAX_VALUE) {
                 // no path to end
-                return -1;
+                return coordsToShortestPaths;
             }
+            coordsToShortestPaths.put(currentSpace.getCoordinates(), currentSpace.getShortestPath());
             coordinateToTileMap.remove(currentSpace.getCoordinates());
-            if (currentSpace.getCoordinates().equals(endingCoordinate)) {
-                return currentSpace.getShortestPath();
+            if (currentSpace.getCoordinates().equals(endingCoord)) {
+                return coordsToShortestPaths;
             }
             for (Coordinate2D direction : DIRECTIONS) {
                 Coordinate2D nextCoord = new Coordinate2D(
@@ -107,33 +117,16 @@ public class Day20 {
                 if (nextTile == null) {
                     continue;
                 }
-                if (!nextTile.isWall()) {
-                    long shortestPath = Math.min(
-                            nextTile.getShortestPath(),
-                            currentSpace.getShortestPath() + 1);
-                    unvisitedTiles.remove(nextTile);
-                    nextTile.setShortestPath(shortestPath);
-                    unvisitedTiles.add(nextTile);
-                }
-            }
-            if (currentSpace.getCoordinates().equals(cheatStart)) {
-                Coordinate2D cheatEnd = new Coordinate2D(
-                        cheatStart.getX() + 2 * DIRECTIONS[cheatDirectionIndex].getX(),
-                        cheatStart.getY() + 2 * DIRECTIONS[cheatDirectionIndex].getY()
-                );
-                Tile nextTile = coordinateToTileMap.getOrDefault(cheatEnd, null);
-                if (nextTile != null) {
-                    long shortestPath = Math.min(
-                            nextTile.getShortestPath(),
-                            currentSpace.getShortestPath() + 2);
-                    unvisitedTiles.remove(nextTile);
-                    nextTile.setShortestPath(shortestPath);
-                    unvisitedTiles.add(nextTile);
-                }
+                long shortestPath = Math.min(
+                        nextTile.getShortestPath(),
+                        currentSpace.getShortestPath() + 1);
+                unvisitedTiles.remove(nextTile);
+                nextTile.setShortestPath(shortestPath);
+                unvisitedTiles.add(nextTile);
             }
         }
         // no path to end
-        return -1;
+        return coordsToShortestPaths;
     }
 
     private void getMap() throws IOException {
@@ -154,16 +147,28 @@ public class Day20 {
         for (String line : map) {
             for (int x = 0; x < line.length(); x++) {
                 char tileChar = line.charAt(x);
+                if (tileChar == '#') {
+                    continue;
+                }
                 Coordinate2D coord = new Coordinate2D(x, y);
-                Tile tile = new Tile(coord, tileChar == '#');
+                Tile tile = new Tile(coord);
                 coordinateToTileMap.put(coord, tile);
                 unvisitedTiles.add(tile);
-                if (tileChar == 'S') {
-                    startingCoordinate = new Coordinate2D(x, y);
-                }
-                if (tileChar == 'E') {
-                    endingCoordinate = new Coordinate2D(x, y);
-                }
+            }
+            y++;
+        }
+    }
+
+    private void setStartAndEndCoords() {
+        int y = 0;
+        for (String line : map) {
+            int xStart = line.indexOf('S');
+            int xEnd = line.indexOf('E');
+            if (xStart != -1) {
+                startingCoordinate = new Coordinate2D(xStart, y);
+            }
+            if (xEnd != -1) {
+                endingCoordinate = new Coordinate2D(xEnd, y);
             }
             y++;
         }

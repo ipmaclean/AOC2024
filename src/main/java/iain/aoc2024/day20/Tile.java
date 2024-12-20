@@ -2,19 +2,15 @@ package iain.aoc2024.day20;
 
 import iain.aoc2024.coordinates.Coordinate2D;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class Tile {
     private final Coordinate2D coordinates;
-    private boolean isWall;
     private long shortestPath = Long.MAX_VALUE;
-
-    public Tile(Coordinate2D coordinates, boolean isWall) {
-        this.coordinates = coordinates;
-        this.isWall = isWall;
-    }
 
     @Override
     public boolean equals(Object obj) {
@@ -32,10 +28,6 @@ public class Tile {
             return false;
         }
 
-        if (this.isWall != other.isWall) {
-            return false;
-        }
-
         if (this.shortestPath != other.shortestPath) {
             return false;
         }
@@ -45,7 +37,7 @@ public class Tile {
 
     @Override
     public int hashCode() {
-        return ((53 + coordinates.hashCode()) * 53 + Boolean.hashCode(isWall) * 53 + longHashCode(shortestPath));
+        return ((53 + coordinates.hashCode()) * 53 + longHashCode(shortestPath));
     }
 
     private static int longHashCode(long value) {

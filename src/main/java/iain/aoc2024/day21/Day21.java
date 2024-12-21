@@ -1,8 +1,5 @@
 package iain.aoc2024.day21;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,8 +8,6 @@ import java.util.*;
 
 import static java.util.Map.entry;
 
-@Getter
-@Setter
 public class Day21 {
     private static final String INPUT_FILE_NAME = "day21/input.txt";
     private static final HashMap<AbstractMap.SimpleImmutableEntry<Character, Character>, String> ARROW_MAP = new HashMap<>(
@@ -86,7 +81,52 @@ public class Day21 {
     }
 
     private void solvePartTwo() {
-        System.out.printf("The solution to part two is %s.%n", 0);
+        // Store the count of 'instructions' ( [^><v]* terminating with A)
+        // instead of generating the full string. Also cached the actual
+        // instruction translation to the next robot down the chain.
+
+        // I should neaten this up, but I've spent enough time on it already!
+        long solution = 0;
+        int counter = 0;
+        HashMap<String, String> translations = new HashMap<>();
+        for (String input : inputs) {
+            StringBuilder sb;
+            String[] slicedInputs = input.split("(?<=A)");
+            HashMap<String, Long> instructionCounts = new HashMap<>();
+            for (String slicedInput : slicedInputs) {
+                long value = instructionCounts.getOrDefault(slicedInput, 0L);
+                instructionCounts.put(slicedInput, value + 1);
+            }
+            for (int i = 0; i < 25; i++) {
+                HashMap<String, Long> nextInstructionCounts = new HashMap<>();
+                for (Map.Entry<String, Long> instructionToCount : instructionCounts.entrySet()) {
+                    String translation = translations.getOrDefault(instructionToCount.getKey(), null);
+                    if (translation == null) {
+                        char firstChar = 'A';
+                        sb = new StringBuilder();
+                        for (int j = 0; j < instructionToCount.getKey().length(); j++) {
+                            char secondChar = instructionToCount.getKey().charAt(j);
+                            sb.append(ARROW_MAP.get(new AbstractMap.SimpleImmutableEntry<>(firstChar, secondChar)));
+                            firstChar = secondChar;
+                        }
+                        translation = sb.toString();
+                        translations.put(instructionToCount.getKey(), translation);
+                    }
+                    String[] slicedTranslations = translation.split("(?<=A)");
+                    for (String slicedTranslation : slicedTranslations) {
+                        long value = nextInstructionCounts.getOrDefault(slicedTranslation, 0L);
+                        nextInstructionCounts.put(slicedTranslation, value + instructionToCount.getValue());
+                    }
+                }
+                instructionCounts = nextInstructionCounts;
+            }
+            long sequenceLength = 0;
+            for (Map.Entry<String, Long> instructionToCount : instructionCounts.entrySet()) {
+                sequenceLength += instructionToCount.getKey().length() * instructionToCount.getValue();
+            }
+            solution += sequenceLength * values.get(counter++);
+        }
+        System.out.printf("The solution to part two is %s.%n", solution);
     }
 
     private void getInput() throws IOException {

@@ -35,30 +35,13 @@ public class Day22 {
     }
 
     private void solvePartTwo() {
-        long solution = 0;
-        List<HashMap<List<Long>, Long>> sequencesToBananasList = getSequencesToBananasList();
-        HashSet<List<Long>> checkedSequences = new HashSet<>();
-        for (HashMap<List<Long>, Long> sequencesToBananas : sequencesToBananasList) {
-            for (List<Long> sequence : sequencesToBananas.keySet()) {
-                if (checkedSequences.contains(sequence)) {
-                    continue;
-                }
-                long totalBananas = 0;
-                for (HashMap<List<Long>, Long> sequencesToBananasInner : sequencesToBananasList) {
-                    totalBananas += sequencesToBananasInner.getOrDefault(sequence, 0L);
-                }
-                checkedSequences.add(sequence);
-                solution = Long.max(solution, totalBananas);
-            }
-        }
-        System.out.printf("The solution to part two is %s.%n", solution);
+        System.out.printf("The solution to part two is %s.%n", getMaxBananas());
     }
 
-    private List<HashMap<List<Long>, Long>> getSequencesToBananasList() {
-        List<HashMap<List<Long>, Long>> sequencesToBananasList = new ArrayList<>();
+    private long getMaxBananas() {
+        HashMap<List<Long>, Long> sequencesToBananas = new HashMap<>();
         for (long secretNumber : secretNumbers) {
-            HashMap<List<Long>, Long> sequencesToBananas = new HashMap<>();
-            sequencesToBananasList.add(sequencesToBananas);
+            HashSet<List<Long>> seenSequences = new HashSet<>();
             long lastPrice = secretNumber % 10;
 
             secretNumber = getNextSecretNumber(secretNumber);
@@ -82,18 +65,18 @@ public class Day22 {
                 long diff4 = currentPrice - lastPrice;
 
                 List<Long> diffList = List.of(diff1, diff2, diff3, diff4);
-                long finalCurrentPrice = currentPrice;
-                sequencesToBananas.computeIfAbsent(diffList,
-                        key -> finalCurrentPrice
-                );
-
+                if (!seenSequences.contains(diffList)) {
+                    long runningBananaTotal = sequencesToBananas.getOrDefault(diffList, 0L);
+                    sequencesToBananas.put(diffList, runningBananaTotal + currentPrice);
+                }
+                seenSequences.add(diffList);
                 lastPrice = currentPrice;
                 diff1 = diff2;
                 diff2 = diff3;
                 diff3 = diff4;
             }
         }
-        return sequencesToBananasList;
+        return sequencesToBananas.values().stream().max(Long::compare).get();
     }
 
     private long getNextSecretNumber(long secretNumber) {

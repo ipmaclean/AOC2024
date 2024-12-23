@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,12 +20,12 @@ public class Day23 {
     }
 
     public void solve() {
-        // A lot of redundant looping in both parts today
         solvePartOne();
         solvePartTwo();
     }
 
     private void solvePartOne() {
+        Instant start = Instant.now();
         long solution = 0;
         for (Node computer : computers) {
             List<Node> connections = computer.getConnections();
@@ -41,12 +44,25 @@ public class Day23 {
             }
         }
         solution /= 3;
+        Instant finish = Instant.now();
         System.out.printf("The solution to part one is %s.%n", solution);
+
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        DecimalFormat formatter = new DecimalFormat("#,###");
+        System.out.printf("The solution to part one took %sms.%n", formatter.format(timeElapsed));
     }
 
     private void solvePartTwo() {
+        Instant start = Instant.now();
         HashSet<String> passwords = new HashSet<>();
+        HashSet<Node> investigatedNodes = new HashSet<>();
         for (Node computer : computers) {
+            // skip any nodes we've already found as a connected group.
+            // They will still be found in any new connected groups via
+            // a currently un-investigated node
+            if (investigatedNodes.contains(computer)) {
+                continue;
+            }
             List<HashSet<Node>> directNetworks = new ArrayList<>();
             HashSet<Node> connectionsWithSelf = new HashSet<>(computer.getConnections());
             connectionsWithSelf.add(computer);
@@ -77,6 +93,7 @@ public class Day23 {
             }
             // add the password based on the connection groups found
             for (HashSet<Node> directNetwork : directNetworks) {
+                investigatedNodes.addAll(directNetwork);
                 String password = directNetwork.stream()
                         .map(Node::getName)
                         .sorted()
@@ -84,11 +101,15 @@ public class Day23 {
                 passwords.add(password);
             }
         }
-        System.out.printf("The solution to part two is %s.%n",
-                passwords.stream()
-                        .max(Comparator.comparingInt(String::length))
-                        .get()
-        );
+        String solution = passwords.stream()
+                .max(Comparator.comparingInt(String::length))
+                .get();
+        Instant finish = Instant.now();
+        System.out.printf("The solution to part two is %s.%n", solution);
+
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        DecimalFormat formatter = new DecimalFormat("#,###");
+        System.out.printf("The solution to part two took %sms.%n", formatter.format(timeElapsed));
     }
 
     private void getInput() throws IOException {

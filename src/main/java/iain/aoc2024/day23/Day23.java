@@ -4,9 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Day23 {
 
@@ -18,6 +17,7 @@ public class Day23 {
     }
 
     public void solve() {
+        // A lot of redundant looping in both parts today
         solvePartOne();
         solvePartTwo();
     }
@@ -45,7 +45,50 @@ public class Day23 {
     }
 
     private void solvePartTwo() {
-        System.out.printf("The solution to part two is %s.%n", 0);
+        HashSet<String> passwords = new HashSet<>();
+        for (Node computer : computers) {
+            List<HashSet<Node>> directNetworks = new ArrayList<>();
+            HashSet<Node> connectionsWithSelf = new HashSet<>(computer.getConnections());
+            connectionsWithSelf.add(computer);
+            directNetworks.add(connectionsWithSelf);
+            for (Node connection : computer.getConnections()) {
+                // Split the direct connections to the current computer
+                // into groups where everything is connected to each other.
+                // Discard groups of 2 for efficiency.
+                List<HashSet<Node>> nextDirectNetworks = new ArrayList<>();
+                HashSet<Node> currentConnectionsWithSelf = new HashSet<>(connection.getConnections());
+                currentConnectionsWithSelf.add(connection);
+                for (HashSet<Node> directNetwork : directNetworks) {
+                    //
+                    HashSet<Node> intersection = new HashSet<>(directNetwork);
+                    intersection.retainAll(currentConnectionsWithSelf);
+                    if (intersection.size() > 2) {
+                        nextDirectNetworks.add(intersection);
+                    }
+
+                    HashSet<Node> difference = new HashSet<>(directNetwork);
+                    difference.removeAll(currentConnectionsWithSelf);
+                    if (difference.size() > 1) {
+                        difference.add(computer);
+                        nextDirectNetworks.add(difference);
+                    }
+                }
+                directNetworks = nextDirectNetworks;
+            }
+            // add the password based on the connection groups found
+            for (HashSet<Node> directNetwork : directNetworks) {
+                String password = directNetwork.stream()
+                        .map(Node::getName)
+                        .sorted()
+                        .collect(Collectors.joining(","));
+                passwords.add(password);
+            }
+        }
+        System.out.printf("The solution to part two is %s.%n",
+                passwords.stream()
+                        .max(Comparator.comparingInt(String::length))
+                        .get()
+        );
     }
 
     private void getInput() throws IOException {

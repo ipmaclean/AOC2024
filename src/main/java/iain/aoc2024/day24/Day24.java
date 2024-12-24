@@ -7,12 +7,10 @@ import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Day24 {
 
@@ -27,6 +25,8 @@ public class Day24 {
 
     public void solve() {
         solvePartOne();
+        // Part 2 is NOT a general solution.
+        // Two dodgy logic gates were found manually in my input.
         solvePartTwo();
     }
 
@@ -95,15 +95,60 @@ public class Day24 {
     }
 
     private void solvePartTwo() {
-        Instant start = Instant.now();
+        System.out.printf("The solution to part two is %s.%n", findDodgyGates());
+    }
 
+    private String findDodgyGates() {
+        // My lack of a CS background was a hindrance for this one.
+        // I ended up looking for hints for part 2 and found that it was a
+        // 1 bit ripple carry adder. Using the structure of the adder, the
+        // following rules capture most of the logic gates with incorrect outputs.
 
-        Instant finish = Instant.now();
-        System.out.printf("The solution to part two is %s.%n", 0);
+        List<LogicGate> logicGatesLocal = new ArrayList<>(logicGates);
+        HashSet<String> shouldBeInputInSecondCheck = new HashSet<>();
+        List<String> dodgyGates = new ArrayList<>();
 
-        long timeElapsed = Duration.between(start, finish).toMillis();
-        DecimalFormat formatter = new DecimalFormat("#,###");
-        System.out.printf("The solution to part two took %sms.%n", formatter.format(timeElapsed));
+        for (LogicGate logicGate : logicGatesLocal) {
+            if (((logicGate.getLeft().startsWith("x") && logicGate.getRight().startsWith("y")) ||
+                    (logicGate.getLeft().startsWith("y") && logicGate.getRight().startsWith("x"))) &&
+                    logicGate.getOperation().equals("XOR") &&
+                    !logicGate.getOutput().equals("z00")) {
+                if (logicGate.getOutput().startsWith("z")) {
+                    dodgyGates.add(logicGate.getOutput());
+                }
+                shouldBeInputInSecondCheck.add(logicGate.getOutput());
+            }
+        }
+        for (LogicGate logicGate : logicGatesLocal) {
+            if (!((logicGate.getLeft().startsWith("x") && logicGate.getRight().startsWith("y")) ||
+                    (logicGate.getLeft().startsWith("y") && logicGate.getRight().startsWith("x")))
+            ) {
+                if (logicGate.getOperation().equals("XOR") &&
+                        !logicGate.getOutput().startsWith("z")) {
+                    dodgyGates.add(logicGate.getOutput());
+                }
+                shouldBeInputInSecondCheck.remove(logicGate.getLeft());
+                shouldBeInputInSecondCheck.remove(logicGate.getRight());
+            }
+            if (!logicGate.getOperation().equals("XOR") &&
+                    logicGate.getOutput().startsWith("z") &&
+                    !logicGate.getOutput().equals("z45")
+            ) {
+                dodgyGates.add(logicGate.getOutput());
+            }
+        }
+        for (String check : shouldBeInputInSecondCheck) {
+            dodgyGates.add(check);
+        }
+        // By playing around with my solution to part one, I noticed that the
+        // bits were incorrect at z06, z10, z20, z39. z10 was not captured in
+        // the checks above, so after looking manually at the logic gates
+        // following x10 and y10, I added kbs and nbd and got the correct answer.
+        dodgyGates.add("kbs");
+        dodgyGates.add("nbd");
+        return dodgyGates.stream()
+                .sorted()
+                .collect(Collectors.joining(","));
     }
 
     private void getInput() throws IOException {
